@@ -4,7 +4,17 @@
 \alias{mc_boot_glmnet}
 \title{Fit n x R blocks of bootstrap replicates in parallel using future.apply}
 \usage{
-mc_boot_glmnet(n = 4L, x, y, alpha = 1, lambda, R = 100, verbose = TRUE, ...)
+mc_boot_glmnet(
+  n = 4L,
+  x,
+  y,
+  alpha = 1,
+  lambda,
+  R = 100,
+  verbose = TRUE,
+  file = NULL,
+  ...
+)
 }
 \arguments{
 \item{n}{number of blocks to compute in parallel}
@@ -20,6 +30,8 @@ mc_boot_glmnet(n = 4L, x, y, alpha = 1, lambda, R = 100, verbose = TRUE, ...)
 \item{R}{number of bootstrap replicates}
 
 \item{verbose}{print replicate number, elapsed time, and expected time to complete if TRUE}
+
+\item{file}{if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name}
 
 \item{t0}{starting time}
 

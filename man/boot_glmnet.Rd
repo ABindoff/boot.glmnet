@@ -4,7 +4,7 @@
 \alias{boot_glmnet}
 \title{Fit bootstrap replicates using glmnet::glmnet}
 \usage{
-boot_glmnet(x, y, alpha, lambda, verbose = TRUE, R = 100, ...)
+boot_glmnet(x, y, alpha, lambda, verbose = TRUE, R = 100, file = NULL, ...)
 }
 \arguments{
 \item{x}{a model matrix or sparse representation of the model matrix}

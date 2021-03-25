@@ -22,6 +22,8 @@ bootfit(x, y, alpha, lambda, t0, R, z, verbose, ...)
 \item{z}{current z or R bootstrap replicate}
 
 \item{verbose}{print replicate number, elapsed time, and expected time to complete if TRUE}
+
+\item{file}{if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name}
 }
 \value{
 RMSE, r-squared, and a matrix of penalized coefficients

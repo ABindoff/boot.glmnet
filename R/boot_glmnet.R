@@ -10,6 +10,7 @@ usethis::use_pipe()
 #' @param R number of bootstrap replicates
 #' @param z current z or R bootstrap replicate
 #' @param verbose print replicate number, elapsed time, and expected time to complete if TRUE
+#' @param file if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name
 #' @return RMSE, r-squared, and a matrix of penalized coefficients
 bootfit <- function(x, y, alpha, lambda, t0, R, z, verbose, ...) {
   if (verbose) {
@@ -69,8 +70,18 @@ boot_glmnet <-
            lambda,
            verbose = TRUE,
            R = 100,
+           file = NULL,
            ...) {
     t0 <- Sys.time()
+    if(is.character(file)){
+      if(file.exists(file)){
+        obj <- readRDS(file = file)
+          if(class(obj) %in% c('boot_glmnet', 'boot_glmet_q')){
+            return(obj)
+          }
+        warning('\nfile supplied was not boot_glmnet object\n')
+      }
+    }
     if (verbose) {
       cat('\n')
     }
@@ -101,6 +112,9 @@ boot_glmnet <-
       coefmat = coefmat
     )
     class(obj) <- 'boot_glmnet'
+    if(is.character(file)){
+      saveRDS(obj, file = file)
+    }
     return(obj)
   }
 
@@ -396,6 +410,7 @@ plot.boot_glmnet_q <- function(obj, keep = NULL, ...) {
 #' @param R number of bootstrap replicates
 #' @param z current z or R bootstrap replicate
 #' @param verbose print replicate number, elapsed time, and expected time to complete if TRUE
+#' @param file if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name
 #' @return RMSE, r-squared, and a matrix of penalized coefficients
 #' @export
 mc_boot_glmnet <- function(n = 4L,
@@ -405,10 +420,20 @@ mc_boot_glmnet <- function(n = 4L,
                            lambda,
                            R = 100,
                            verbose = TRUE,
+                           file = NULL,
                            ...) {
   if (n < 2) {
     warning('\n number of blocks n must be >=2, increasing n to 2\n')
     n = 2L
+  }
+  if(is.character(file)){
+    if(file.exists(file)){
+      obj <- readRDS(file = file)
+      if(class(obj) %in% c('boot_glmnet', 'boot_glmet_q')){
+        return(obj)
+      }
+      warning('\nfile supplied was not boot_glmnet object\n')
+    }
   }
   if(!class(x) %in% 'dgCMatrix'){
     x <- Matrix::Matrix(x, sparse = TRUE)
@@ -432,6 +457,9 @@ mc_boot_glmnet <- function(n = 4L,
   j <- k[, 1]
   for (i in 2:n) {
     j <- boot_combine(j, k[, i])
+  }
+  if(is.character(file)){
+    saveRDS(j, file = file)
   }
   return(j)
 }

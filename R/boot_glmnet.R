@@ -404,10 +404,14 @@ mc_boot_glmnet <- function(n = 4L,
                            alpha = 1,
                            lambda,
                            R = 100,
-                           verbose = TRUE) {
+                           verbose = TRUE,
+                           ...) {
   if (n < 2) {
     warning('\n number of blocks n must be >=2, increasing n to 2\n')
     n = 2L
+  }
+  if(!class(x) %in% 'dgCMatrix'){
+    x <- Matrix::Matrix(x, sparse = TRUE)
   }
   future::plan("future::multisession")
   k <- future.apply::future_replicate(

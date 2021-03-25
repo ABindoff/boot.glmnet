@@ -87,7 +87,7 @@ boot_glmnet <-
         ...
       ))
     out <- simplify2array(out)
-    
+
     r2vec <- unlist(out['R2', ])
     rmsevec <- unlist(out['RMSE', ])
     coefs <- out['coefs', ]
@@ -136,7 +136,7 @@ boot_combine <- function(fit1, fit2) {
   )
   class(obj) <- 'boot_glmnet'
   return(obj)
-  
+
 }
 
 #' Compute bootstrap statistics
@@ -156,7 +156,7 @@ quant.boot_glmnet <- function(obj, ci = .95) {
   coefmat <- obj$coefmat
   r2vec <- obj$r2vec
   rmsevec <- obj$rmsevec
-  
+
   coefs.lwr <-
     apply(coefmat, 1, function(z)
       quantile(z, ci.lwr, na.rm = TRUE))
@@ -211,7 +211,7 @@ p.lasso <- function(obj, ...) {
   if (class(obj) == 'boot_glmnet') {
     x <- quant.boot_glmnet(obj, ...)
   }
-  
+
   y <- x$coefs[, c(4:6)]
   colnames(y) <-
     c('p.lasso',
@@ -271,7 +271,7 @@ sig_coefs <- function(obj, p.lasso.thresh = 1, ...) {
   flag <- sign(x[, 2]) == sign(x[, 3])
   flag[x[, 2] == 0] <- FALSE
   plt <- x$p.lasso > p.lasso.thresh
-  
+
   names(x) <- c(
     'Estimate',
     paste0('lwr'),
@@ -294,8 +294,8 @@ summary.boot_glmnet <-
     print(obj$alpha)
     cat('\nlambda: ')
     print(obj$lambda)
-    
-    
+
+
     cat('\nRMSE: \n')
     print(obj$rmse, digits = digits)
     cat('\nR-squared:  \n')
@@ -323,8 +323,8 @@ summary.boot_glmnet_q <-
     print(obj$alpha)
     cat('\nlambda: ')
     print(obj$lambda)
-    
-    
+
+
     cat('\nRMSE: \n')
     print(obj$rmse, digits = digits)
     cat('\nR-squared:  \n')
@@ -349,7 +349,7 @@ plot.boot_glmnet <- function(obj, keep = NULL, ...) {
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
     dplyr::mutate(coef = forcats::fct_reorder(coef, Estimate))
-  
+
   g <-
     ggplot2::ggplot(s, aes(x = coef, y = Estimate, colour = flag)) +
     geom_errorbar(width = .2, aes(ymin = lwr, ymax = upr)) +
@@ -371,7 +371,7 @@ plot.boot_glmnet_q <- function(obj, keep = NULL, ...) {
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
     dplyr::mutate(coef = forcats::fct_reorder(coef, Estimate))
-  
+
   g <- ggplot(s, aes(x = coef, y = Estimate, colour = flag)) +
     geom_errorbar(width = .2, aes(ymin = lwr, ymax = upr)) +
     geom_point() +
@@ -409,7 +409,7 @@ mc_boot_glmnet <- function(n = 4L,
     warning('\n number of blocks n must be >=2, increasing n to 2\n')
     n = 2L
   }
-  future.apply::plan(multisession)
+  future::plan(multisession)
   k <- future.apply::future_replicate(
     n,
     boot_glmnet(
@@ -424,6 +424,7 @@ mc_boot_glmnet <- function(n = 4L,
     simplify = "list",
     future.seed = TRUE
   )
+  future::plan(sequential)
   j <- k[, 1]
   for (i in 2:n) {
     j <- boot_combine(j, k[, i])

@@ -409,7 +409,7 @@ mc_boot_glmnet <- function(n = 4L,
     warning('\n number of blocks n must be >=2, increasing n to 2\n')
     n = 2L
   }
-  future::plan(multisession)
+  future::plan("future::multisession")
   k <- future.apply::future_replicate(
     n,
     boot_glmnet(
@@ -424,7 +424,7 @@ mc_boot_glmnet <- function(n = 4L,
     simplify = "list",
     future.seed = TRUE
   )
-  future::plan(sequential)
+  future::plan("future::sequential")
   j <- k[, 1]
   for (i in 2:n) {
     j <- boot_combine(j, k[, i])

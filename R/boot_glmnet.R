@@ -277,7 +277,7 @@ coef.boot_glmnet_q <- function(obj, ...) {
 }
 
 
-sig_coefs <- function(obj, p.lasso.thresh = 1, ...) {
+sig_coefs <- function(obj, ...) {
   if (class(obj) == 'boot_glmnet') {
     obj <- quant.boot_glmnet(obj, ...)
   }
@@ -357,8 +357,8 @@ summary.boot_glmnet_q <-
   }
 
 #' @export
-plot.boot_glmnet <- function(obj, keep = NULL, ...) {
-  s <- sig_coefs(obj, ...) %>% tibble::rownames_to_column() %>%
+plot.boot_glmnet <- function(obj, keep = NULL, p.lasso.thresh = 1,  ...) {
+  s <- sig_coefs(obj, p.lasso.thresh = p.lasso.thresh, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
@@ -379,8 +379,8 @@ plot.boot_glmnet <- function(obj, keep = NULL, ...) {
 }
 
 #' @export
-plot.boot_glmnet_q <- function(obj, keep = NULL, ...) {
-  s <- sig_coefs(obj) %>% tibble::rownames_to_column() %>%
+plot.boot_glmnet_q <- function(obj, keep = NULL, p.lasso.thresh = 1, ...) {
+  s <- sig_coefs(obj, p.lasso.thresh = p.lasso.thresh, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%

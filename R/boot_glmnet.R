@@ -12,13 +12,62 @@ usethis::use_pipe()
 #' @param verbose print replicate number, elapsed time, and expected time to complete if TRUE
 #' @param file if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name
 #' @return RMSE, r-squared, and a matrix of penalized coefficients
-bootfit <- function(x, y, alpha, lambda, t0, R, z, verbose, ...) {
+bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   if (verbose) {
     cat('\rFitting bootstrap replicate',
         z,
         'of',
         R)
   }
+
+  if(is.null(cluster)){
+    cluster <- 1:length(y)
+  }
+  j <- sample(unique(cluster), length(unique(cluster)), replace = TRUE)
+  deck <- 1:length(y)
+  deck <- deck[cluster %in% j]
+  k <- sample(deck, length(y), replace = TRUE)
+  y <- y[k]
+  x <- x[k, ]
+  m <-
+    glmnet::glmnet(
+      x = x,
+      y = y,
+      alpha = alpha,
+      lambda = lambda,
+      family = "gaussian"
+    )
+  pred <- predict(m, x, lambda = lambda, type = "response")
+  t1 <- Sys.time()
+  elapsed <- as.numeric(t1 - t0)
+  tms <- ifelse(elapsed / z * R < 120, 1, 60)
+  tms.label <- ifelse(elapsed / z * R < 120, 'sec', 'min')
+  if (verbose) {
+    cat(
+      '\b . Time elapsed',
+      round(elapsed / tms, 1),
+      tms.label,
+      '\b. Expected time to complete',
+      round((elapsed / z) / tms * R, 1),
+      tms.label,
+      '\b.             '
+    )
+  }
+  return(list(
+    RMSE = caret::RMSE(pred, y),
+    R2 = caret::R2(pred, y)[1, 1],
+    coefs = coef(m, lambda = lambda)
+  ))
+}
+
+bootfit0 <- function(x, y, alpha, lambda, t0, R, z, verbose, ...) {
+  if (verbose) {
+    cat('\rFitting bootstrap replicate',
+        z,
+        'of',
+        R)
+  }
+
   k <- sample(1:length(y), length(y), replace = TRUE)
   y <- y[k]
   x <- x[k, ]
@@ -53,6 +102,7 @@ bootfit <- function(x, y, alpha, lambda, t0, R, z, verbose, ...) {
   ))
 }
 
+
 #' Fit bootstrap replicates using glmnet::glmnet
 #'
 #' @param x a model matrix or sparse representation of the model matrix
@@ -68,6 +118,7 @@ boot_glmnet <-
            y,
            alpha,
            lambda,
+           cluster = NULL,
            verbose = TRUE,
            R = 100,
            file = NULL,
@@ -89,6 +140,7 @@ boot_glmnet <-
       bootfit(
         y = y,
         x = x,
+        cluster = cluster,
         alpha = alpha,
         lambda = lambda,
         t0 = t0,
@@ -277,7 +329,9 @@ coef.boot_glmnet_q <- function(obj, ...) {
 }
 
 
-sig_coefs <- function(obj, ...) {
+sig_coefs <- function(obj,
+                      p.lasso.thresh = 1,
+                      ...) {
   if (class(obj) == 'boot_glmnet') {
     obj <- quant.boot_glmnet(obj, ...)
   }
@@ -300,8 +354,8 @@ sig_coefs <- function(obj, ...) {
 #' @export
 summary.boot_glmnet <-
   function(obj,
-           p.lasso.thresh = 1,
            digits = 3,
+           p.lasso.thresh = 1,
            ...) {
     obj <- quant.boot_glmnet(obj, ...)
     cat('\nalpha: ')
@@ -314,7 +368,9 @@ summary.boot_glmnet <-
     print(obj$rmse, digits = digits)
     cat('\nR-squared:  \n')
     print(obj$r2, digits = digits)
-    ci <- sig_coefs(obj, p.lasso.thresh)
+    ci <- sig_coefs(obj,
+                    p.lasso.thresh = p.lasso.thresh,
+                    ...)
     cat(
       '\nCoefficients with significant coefficients at p <',
       1 - obj$ci,
@@ -343,7 +399,9 @@ summary.boot_glmnet_q <-
     print(obj$rmse, digits = digits)
     cat('\nR-squared:  \n')
     print(obj$r2, digits = digits)
-    ci <- sig_coefs(obj, p.lasso.thresh)
+    ci <- sig_coefs(obj,
+                    p.lasso.thresh = p.lasso.thresh,
+                    ...)
     cat(
       '\nCoefficients with significant coefficients at p <',
       1 - obj$ci,
@@ -357,8 +415,10 @@ summary.boot_glmnet_q <-
   }
 
 #' @export
-plot.boot_glmnet <- function(obj, keep = NULL, p.lasso.thresh = 1,  ...) {
-  s <- sig_coefs(obj, p.lasso.thresh = p.lasso.thresh, ...) %>% tibble::rownames_to_column() %>%
+plot.boot_glmnet <- function(obj,
+                             keep = NULL,
+                             ...) {
+  s <- sig_coefs(obj, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
@@ -379,8 +439,10 @@ plot.boot_glmnet <- function(obj, keep = NULL, p.lasso.thresh = 1,  ...) {
 }
 
 #' @export
-plot.boot_glmnet_q <- function(obj, keep = NULL, p.lasso.thresh = 1, ...) {
-  s <- sig_coefs(obj, p.lasso.thresh = p.lasso.thresh, ...) %>% tibble::rownames_to_column() %>%
+plot.boot_glmnet_q <- function(obj,
+                               keep = NULL,
+                               ...) {
+  s <- sig_coefs(obj, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%

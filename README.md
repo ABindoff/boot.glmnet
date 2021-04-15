@@ -2,17 +2,16 @@ README
 ================
 Bindoff, A. D.
 
-2021-03-25
+2021-04-15
 
 ## Background
 
 Penalized regression methods are used to select variables for prediction
 models (or diagnostic models). In some fields the data may be very
 high-dimensional, resulting in very large model matrixes. Frequently,
-users must fit many boostrap replications to obtain useful statistics
-such as non-parametric confidence intervals. This can quickly exceed
-memory and computation constraints, even using sparse matrix
-representations.
+users must fit many boostrap replications to obtain statistics such as
+confidence intervals. This can quickly exceed memory and computation
+constraints, even using sparse matrix representations.
 
 The `boot.glmnet` R package aims to extend the popular `glmnet` R
 package \[1\] by providing functions to fit bootstrap replications in
@@ -24,6 +23,9 @@ in all supported environments (including Windows).
 Additionally, `boot.glmnet` will calculate the proportion of replicates
 for which a predictor term is selected via LASSO (or elastic-net), and
 return an approximate confidence interval around this.
+
+Planned extensions include cluster-robust bootstrap methods including
+cluster wild-bootstrap.
 
 Methods are provided for conveniently summarising results above
 significance thresholds and plotting results.

@@ -21,12 +21,16 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   }
 
   if(is.null(cluster)){
-    cluster <- 1:length(y)
+    k <- sample(1:length(y), length(y), replace = TRUE)
+  } else {
+    # sample from clusters
+    j <- sample(unique(cluster), length(unique(cluster)), replace = TRUE)
+    # index rows of data then subset only those rows from sampled clusters
+    deck <- 1:length(y)
+    deck <- deck[cluster %in% j]
+    # sample n = length(y) rows from clusters with replacement
+    k <- sample(deck, length(y), replace = TRUE)
   }
-  j <- sample(unique(cluster), length(unique(cluster)), replace = TRUE)
-  deck <- 1:length(y)
-  deck <- deck[cluster %in% j]
-  k <- sample(deck, length(y), replace = TRUE)
   y <- y[k]
   x <- x[k, ]
   m <-
@@ -39,9 +43,9 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
     )
   pred <- predict(m, x, lambda = lambda, type = "response")
   t1 <- Sys.time()
-  elapsed <- as.numeric(t1 - t0)
-  tms <- ifelse(elapsed / z * R < 120, 1, 60)
-  tms.label <- ifelse(elapsed / z * R < 120, 'sec', 'min')
+  elapsed <- as.numeric(t1) - as.numeric(t0)
+  tms <- ifelse(elapsed / z * R < 180, 1, 60)
+  tms.label <- ifelse(tms == 1, 'sec', 'min')
   if (verbose) {
     cat(
       '\b . Time elapsed',
@@ -60,6 +64,8 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   ))
 }
 
+# this is the superceded bootfit function which does not allow user to
+# account for any clustering in the data
 bootfit0 <- function(x, y, alpha, lambda, t0, R, z, verbose, ...) {
   if (verbose) {
     cat('\rFitting bootstrap replicate',

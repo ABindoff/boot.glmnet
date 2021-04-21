@@ -4,13 +4,14 @@ usethis::use_pipe()
 #'
 #' @param x Model matrix or sparse model matrix
 #' @param y Dependent or outcome variable
+#' @param cluster optional vector of length(y) labels denoting clusters
 #' @param alpha mixing parameter ranging from 0 to 1, with 0 being ridge regression, 1 being the LASSO and values in-between being elastic net regression
 #' @param lambda penalty term
-#' @param t0 starting time
+#' @param t0 starting time, typically provided by boot_glmnet()
 #' @param R number of bootstrap replicates
-#' @param z current z or R bootstrap replicate
+#' @param z current z of R bootstrap replicate, provided by boot_glmnet()
 #' @param verbose print replicate number, elapsed time, and expected time to complete if TRUE
-#' @param file if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name
+#' @param file if a character string is supplied, mc_/boot_glmnet will attempt to find a file with that name
 #' @return RMSE, r-squared, and a matrix of penalized coefficients
 bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   if (verbose) {
@@ -23,6 +24,10 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   if(is.null(cluster)){
     k <- sample(1:length(y), length(y), replace = TRUE)
   } else {
+    # very basic check of supplied cluster vector
+    if(length(cluster) > length(y)){
+      stop('\nLength of cluster vector > length of y vector\n')
+    }
     # sample from clusters
     j <- sample(unique(cluster), length(unique(cluster)), replace = TRUE)
     # index rows of data then subset only those rows from sampled clusters
@@ -44,7 +49,7 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
   pred <- predict(m, x, lambda = lambda, type = "response")
   t1 <- Sys.time()
   elapsed <- as.numeric(t1) - as.numeric(t0)
-  tms <- ifelse(elapsed / z * R < 180, 1, 60)
+  tms <- ifelse(elapsed / z * R < 120, 1, 60)
   tms.label <- ifelse(tms == 1, 'sec', 'min')
   if (verbose) {
     cat(

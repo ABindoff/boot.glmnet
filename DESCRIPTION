@@ -1,5 +1,5 @@
 Package: boot.glmnet
-Title: Bootstrap large glmnet models in parallel blocks
+Title: Bootstrap large glmnet models in (parallel) blocks
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Aidan",
@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "aidan.bindoff@utas.edu.au",
            comment = c(ORCID = "https://orcid.org/0000-0002-0943-2702"))
-Description: Fit bootstrap replicates of glmnet models, optionally in parallel. Computes statistics including probability of selection under penalization.
+Description: Fit bootstrap replicates of glmnet models, optionally in parallel. Computes statistics including probability of selection under penalization. Will perform a cluster bootstrap.
 License: `use_mit_license()`
 Encoding: UTF-8
 LazyData: true

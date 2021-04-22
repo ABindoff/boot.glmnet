@@ -25,8 +25,8 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
     k <- sample(1:length(y), length(y), replace = TRUE)
   } else {
     # very basic check of supplied cluster vector
-    if(length(cluster) > length(y)){
-      stop('\nLength of cluster vector > length of y vector\n')
+    if(length(cluster) != length(y)){
+      stop('\nLength of cluster vector != length of y vector\n')
     }
     # sample from clusters
     j <- sample(unique(cluster), length(unique(cluster)), replace = TRUE)

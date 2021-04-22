@@ -4,26 +4,28 @@
 \alias{bootfit}
 \title{Fit a bootstrap replicate}
 \usage{
-bootfit(x, y, alpha, lambda, t0, R, z, verbose, ...)
+bootfit(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...)
 }
 \arguments{
 \item{x}{Model matrix or sparse model matrix}
 
 \item{y}{Dependent or outcome variable}
 
+\item{cluster}{optional vector of length(y) labels denoting clusters}
+
 \item{alpha}{mixing parameter ranging from 0 to 1, with 0 being ridge regression, 1 being the LASSO and values in-between being elastic net regression}
 
 \item{lambda}{penalty term}
 
-\item{t0}{starting time}
+\item{t0}{starting time, typically provided by boot_glmnet()}
 
 \item{R}{number of bootstrap replicates}
 
-\item{z}{current z or R bootstrap replicate}
+\item{z}{current z of R bootstrap replicate, provided by boot_glmnet()}
 
 \item{verbose}{print replicate number, elapsed time, and expected time to complete if TRUE}
 
-\item{file}{if a character string is supplied, mc_boot_glmnet will attempt to find a file with that name}
+\item{file}{if a character string is supplied, mc_/boot_glmnet will attempt to find a file with that name}
 }
 \value{
 RMSE, r-squared, and a matrix of penalized coefficients

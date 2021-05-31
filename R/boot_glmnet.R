@@ -367,32 +367,43 @@ summary.boot_glmnet <-
   function(obj,
            digits = 3,
            p.lasso.thresh = 1,
+           silent = FALSE,
            ...) {
     obj <- quant.boot_glmnet(obj, ...)
-    cat('\nalpha: ')
-    print(obj$alpha)
-    cat('\nlambda: ')
-    print(obj$lambda)
+    if(!silent){
+      cat('\nalpha: ')
+      print(obj$alpha)
+      cat('\nlambda: ')
+      print(obj$lambda)
 
 
-    cat('\nRMSE: \n')
-    print(obj$rmse, digits = digits)
-    cat('\nR-squared:  \n')
-    print(obj$r2, digits = digits)
-    ci <- sig_coefs(obj,
-                    p.lasso.thresh = p.lasso.thresh,
-                    ...)
-    cat(
-      '\nCoefficients with significant coefficients at p <',
-      1 - obj$ci,
-      'or P(selection with LASSO) >',
-      p.lasso.thresh,
-      ':  \n'
-    )
-    ci$sig <- ifelse(ci$flag, '*', ' ')
-    print(ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)], digits = digits)
-    cat('\n\n')
+      cat('\nRMSE: \n')
+      print(obj$rmse, digits = digits)
+      cat('\nR-squared:  \n')
+      print(obj$r2, digits = digits)
+      ci <- sig_coefs(obj,
+                      p.lasso.thresh = p.lasso.thresh,
+                      ...)
+      cat(
+        '\nCoefficients with significant coefficients at p <',
+        1 - obj$ci,
+        'or P(selection with LASSO) >',
+        p.lasso.thresh,
+        ':  \n'
+      )
+      ci$sig <- ifelse(ci$flag, '*', ' ')
+      print(ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)], digits = digits)
+      cat('\n\n')
+    }
+    if(silent){
+      ci <- sig_coefs(obj,
+                      p.lasso.thresh = p.lasso.thresh,
+                      ...)
+      ci$sig <- ifelse(ci$flag, '*', ' ')
+      ci[,-c('flag')]
+    }
   }
+
 
 #' @export
 summary.boot_glmnet_q <-

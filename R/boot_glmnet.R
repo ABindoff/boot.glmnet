@@ -487,7 +487,7 @@ plot.boot_glmnet <- function(obj,
     geom_hline(yintercept = 0, linetype = 'dashed') +
     scale_colour_manual(values = c("black", "red")) +
     xlab("") +
-    ylab("[Penalized] coefficient (in standardized units, SD)") +
+    ylab("[Penalized] coefficient") +
     coord_flip() +
     theme_bw() +
     theme(legend.position = "none")

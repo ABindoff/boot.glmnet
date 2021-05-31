@@ -13,7 +13,7 @@ usethis::use_pipe()
 #' @param verbose print replicate number, elapsed time, and expected time to complete if TRUE
 #' @param file if a character string is supplied, mc_/boot_glmnet will attempt to find a file with that name
 #' @return RMSE, r-squared, and a matrix of penalized coefficients
-bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
+bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, standardize, ...) {
   if (verbose) {
     cat('\rFitting bootstrap replicate',
         z,
@@ -44,7 +44,8 @@ bootfit <- function(x, y, cluster, alpha, lambda, t0, R, z, verbose, ...) {
       y = y,
       alpha = alpha,
       lambda = lambda,
-      family = "gaussian"
+      family = "gaussian",
+      standardize = standardize
     )
   pred <- predict(m, x, lambda = lambda, type = "response")
   t1 <- Sys.time()
@@ -133,6 +134,7 @@ boot_glmnet <-
            verbose = TRUE,
            R = 100,
            file = NULL,
+           standardize = TRUE,
            ...) {
     t0 <- Sys.time()
     if(is.character(file)){
@@ -158,6 +160,7 @@ boot_glmnet <-
         R = R,
         z = z,
         verbose = verbose,
+        standardize = standardize,
         ...
       ))
     out <- simplify2array(out)
@@ -368,6 +371,7 @@ summary.boot_glmnet <-
            digits = 3,
            p.lasso.thresh = 1,
            silent = FALSE,
+           interaction.only = FALSE,
            ...) {
     obj <- quant.boot_glmnet(obj, ...)
     if(!silent){
@@ -392,7 +396,11 @@ summary.boot_glmnet <-
         ':  \n'
       )
       ci$sig <- ifelse(ci$flag, '*', ' ')
-      print(ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)], digits = digits)
+      k <- ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)]
+      if(interaction.only){
+        k <- k[grepl(":", rownames(k)),]
+      }
+      print(k, digits = digits)
       cat('\n\n')
     }
     if(silent){
@@ -400,7 +408,11 @@ summary.boot_glmnet <-
                       p.lasso.thresh = p.lasso.thresh,
                       ...)
       ci$sig <- ifelse(ci$flag, '*', ' ')
-      ci[,-c('flag')]
+      k <- ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)]
+      if(interaction.only){
+        k <- k[grepl(":", rownames(k)),]
+      }
+      k
     }
   }
 
@@ -410,42 +422,64 @@ summary.boot_glmnet_q <-
   function(obj,
            p.lasso.thresh = 1,
            digits = 3,
+           silent = FALSE,
+           interaction.only = FALSE,
            ...) {
-    cat('\nalpha: ')
-    print(obj$alpha)
-    cat('\nlambda: ')
-    print(obj$lambda)
+    if(!silent){
+      cat('\nalpha: ')
+      print(obj$alpha)
+      cat('\nlambda: ')
+      print(obj$lambda)
 
 
-    cat('\nRMSE: \n')
-    print(obj$rmse, digits = digits)
-    cat('\nR-squared:  \n')
-    print(obj$r2, digits = digits)
-    ci <- sig_coefs(obj,
-                    p.lasso.thresh = p.lasso.thresh,
-                    ...)
-    cat(
-      '\nCoefficients with significant coefficients at p <',
-      1 - obj$ci,
-      'or P(selection with LASSO) >',
-      p.lasso.thresh,
-      ':  \n'
-    )
-    ci$sig <- ifelse(ci$flag, '*', ' ')
-    print(ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)], digits = digits)
-    cat('\n\n')
+      cat('\nRMSE: \n')
+      print(obj$rmse, digits = digits)
+      cat('\nR-squared:  \n')
+      print(obj$r2, digits = digits)
+      ci <- sig_coefs(obj,
+                      p.lasso.thresh = p.lasso.thresh,
+                      ...)
+      cat(
+        '\nCoefficients with significant coefficients at p <',
+        1 - obj$ci,
+        'or P(selection with LASSO) >',
+        p.lasso.thresh,
+        ':  \n'
+      )
+      ci$sig <- ifelse(ci$flag, '*', ' ')
+      k <- ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)]
+      if(interaction.only){
+        k <- k[grepl(":", rownames(k)),]
+      }
+      print(k, digits = digits)
+      cat('\n\n')
+    }
+    if(silent){
+      ci <- sig_coefs(obj,
+                      p.lasso.thresh = p.lasso.thresh,
+                      ...)
+      ci$sig <- ifelse(ci$flag, '*', ' ')
+      k <- ci[ci$flag | ci$p.lasso.thresh, -c(7, 8)]
+      if(interaction.only){
+        k <- k[grepl(":", rownames(k)),]
+      }
+      k
+    }
   }
 
 #' @export
 plot.boot_glmnet <- function(obj,
                              keep = NULL,
+                             interaction.only = FALSE,
                              ...) {
   s <- sig_coefs(obj, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
     dplyr::mutate(coef = forcats::fct_reorder(coef, Estimate))
-
+  if(interaction.only){
+    s <- s[grepl(":", s$coef),]
+  }
   g <-
     ggplot2::ggplot(s, aes(x = coef, y = Estimate, colour = flag)) +
     geom_errorbar(width = .2, aes(ymin = lwr, ymax = upr)) +
@@ -463,13 +497,16 @@ plot.boot_glmnet <- function(obj,
 #' @export
 plot.boot_glmnet_q <- function(obj,
                                keep = NULL,
+                               interaction.only = FALSE,
                                ...) {
   s <- sig_coefs(obj, ...) %>% tibble::rownames_to_column() %>%
     dplyr::rename(coef = rowname) %>%
     dplyr::filter(flag |
                     coef %in% keep | p.lasso.thresh, coef != '(Intercept)') %>%
     dplyr::mutate(coef = forcats::fct_reorder(coef, Estimate))
-
+  if(interaction.only){
+    s <- s[grepl(":", s$coef),]
+  }
   g <- ggplot(s, aes(x = coef, y = Estimate, colour = flag)) +
     geom_errorbar(width = .2, aes(ymin = lwr, ymax = upr)) +
     geom_point() +
